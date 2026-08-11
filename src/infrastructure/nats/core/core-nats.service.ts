@@ -59,9 +59,22 @@ export class CoreNatsService {
     message: Msg,
     handler: CoreNatsMessageHandler<TPayload>,
   ): Promise<void> {
+    let payload: TPayload;
+
     try {
       // Decode here so handlers receive typed payloads plus the actual matched subject.
-      const payload = this.codec.decode(message.data) as TPayload;
+      payload = this.codec.decode(message.data) as TPayload;
+    } catch (error) {
+      // Normalize unknown thrown values so Nest Logger always receives a useful message/stack.
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(
+        `Failed to decode Core NATS message for subscription=${subscriptionSubject} actualSubject=${message.subject}: ${normalizedError.message}`,
+        normalizedError.stack,
+      );
+      return;
+    }
+
+    try {
       await handler({
         subscriptionSubject,
         subject: message.subject,
