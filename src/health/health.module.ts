@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { HealthController } from './health.controller';
+import { NatsModule } from 'src/infrastructure/nats/nats.module';
 
 @Module({
-  // The module only declares the small health controller; it relies on the
-  // globally exported NatsModule/NatsService instead of creating a new connection.
+  imports:[NatsModule],
   controllers: [HealthController],
 })
 export class HealthModule {}
