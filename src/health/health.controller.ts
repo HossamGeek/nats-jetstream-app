@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
-import { NatsService } from '../infrastructure/nats/nats.service';
-import type { HealthCheckResult, NatsHealthDetail } from '../shared/interfaces/health.interface';
+import { NatsService } from '@infrastructure/nats/nats.service';
+import type { HealthCheckResult, NatsHealthDetail } from '@shared/interfaces/health.interface';
 
 @Controller('health')
 export class HealthController {

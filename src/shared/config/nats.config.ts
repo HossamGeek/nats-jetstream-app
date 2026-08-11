@@ -1,5 +1,5 @@
 import { registerAs } from '@nestjs/config';
-import type { NatsModuleOptions } from '../interfaces/nats/nats-options.interface';
+import type { NatsModuleOptions } from '@shared/interfaces/nats/nats-options.interface';
 
 /** Default NATS server URL used when NATS_SERVERS is not provided. */
 const DEFAULT_NATS_SERVERS = 'nats://localhost:4222';

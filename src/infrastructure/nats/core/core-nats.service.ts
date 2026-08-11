@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { Msg, Subscription } from '@nats-io/transport-node';
-import { NatsService } from '../nats.service';
 import type {
   CoreNatsMessageHandler,
   CoreNatsSubscription,
-} from '../../../shared/interfaces/nats/core-nats.types';
+} from '@shared/interfaces/nats/core-nats.types';
+import { NatsService } from '../nats.service';
 import { JsonNatsCodec } from './json-nats.codec';
 
 @Injectable()

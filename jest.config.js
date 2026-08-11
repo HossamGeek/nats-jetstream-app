@@ -7,6 +7,10 @@ module.exports = {
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
+  moduleNameMapper: {
+    '^@shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
+  },
   collectCoverageFrom: ['src/**/*.(t|j)s'],
   coverageDirectory: 'coverage',
   testEnvironment: 'node',

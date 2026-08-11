@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { CoreNatsMessage } from '../../shared/interfaces/nats/core-nats.types';
+import { CoreNatsService } from '@infrastructure/nats/core/core-nats.service';
+import type { CoreNatsMessage } from '@shared/interfaces/nats/core-nats.types';
 import type {
   CoreNatsDemoRunResponse,
   DemoOrderPayload,
   DemoTextPayload,
-} from '../../shared/interfaces/demos/core-nats-demo.types';
-import { CoreNatsService } from '../../infrastructure/nats/core/core-nats.service';
+} from '@shared/interfaces/demos/core-nats-demo.types';
 
 @Injectable()
 export class CoreNatsDemoService {

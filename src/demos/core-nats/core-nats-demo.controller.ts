@@ -1,5 +1,5 @@
 import { Controller, Post } from '@nestjs/common';
-import type { CoreNatsDemoRunResponse } from '../../shared/interfaces/demos/core-nats-demo.types';
+import type { CoreNatsDemoRunResponse } from '@shared/interfaces/demos/core-nats-demo.types';
 import { CoreNatsDemoService } from './core-nats-demo.service';
 
 @Controller('demos/core-nats')

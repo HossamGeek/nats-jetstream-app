@@ -1,5 +1,5 @@
 import type { CoreNatsMessage } from './core-nats.types';
-import type { DemoOrderPayload, DemoTextPayload } from '../demos/core-nats-demo.types';
+import type { DemoOrderPayload, DemoTextPayload } from '@shared/interfaces/demos/core-nats-demo.types';
 
 export type TestOrderPayload = DemoOrderPayload;
 

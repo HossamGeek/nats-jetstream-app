@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
-import { CoreNatsService } from '../../../src/infrastructure/nats/core/core-nats.service';
-import { NatsService } from '../../../src/infrastructure/nats/nats.service';
-import type { CoreNatsMessageHandler } from '../../../src/shared/interfaces/nats/core-nats.types';
+import { CoreNatsService } from '@infrastructure/nats/core/core-nats.service';
+import { NatsService } from '@infrastructure/nats/nats.service';
+import type { CoreNatsMessageHandler } from '@shared/interfaces/nats/core-nats.types';
 
 const encodeJson = (payload: unknown): Uint8Array =>
   new TextEncoder().encode(JSON.stringify(payload));

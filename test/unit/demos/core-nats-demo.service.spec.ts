@@ -1,8 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { CoreNatsService } from '@infrastructure/nats/core/core-nats.service';
+import type { CoreNatsMessageHandler } from '@shared/interfaces/nats/core-nats.types';
 import { CoreNatsDemoService } from '../../../src/demos/core-nats/core-nats-demo.service';
-import { CoreNatsService } from '../../../src/infrastructure/nats/core/core-nats.service';
-import type { CoreNatsMessageHandler } from '../../../src/shared/interfaces/nats/core-nats.types';
 
 describe('CoreNatsDemoService', () => {
   let service: CoreNatsDemoService;

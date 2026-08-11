@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
+import { NatsModule } from '@infrastructure/nats/nats.module';
 import { HealthController } from './health.controller';
-import { NatsModule } from 'src/infrastructure/nats/nats.module';
 
 @Module({
   imports:[NatsModule],
