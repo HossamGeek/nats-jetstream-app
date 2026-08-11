@@ -151,7 +151,37 @@ describe('CoreNatsService', () => {
     await Promise.resolve();
 
     expect(loggerErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Core NATS message handler failed'),
+      expect.any(String),
+    );
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining('handler failed'),
+      expect.any(String),
+    );
+  });
+
+  it('logs decode failures separately without invoking the handler', async () => {
+    const handler = jest.fn();
+
+    service.subscribe('demo.orders.*', handler);
+    const callback = getSubscribeCallback();
+
+    expect(() =>
+      callback(null, {
+        subject: 'demo.orders.created',
+        data: new TextEncoder().encode('{invalid-json'),
+      }),
+    ).not.toThrow();
+    await Promise.resolve();
+
+    expect(handler).not.toHaveBeenCalled();
+    expect(loggerErrorSpy).toHaveBeenCalledTimes(1);
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to decode Core NATS message'),
+      expect.any(String),
+    );
+    expect(loggerErrorSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('Core NATS message handler failed'),
       expect.any(String),
     );
   });
