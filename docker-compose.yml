@@ -1,0 +1,25 @@
+# NATS JetStream infrastructure (TASK-01)
+#
+# Start:  docker compose up -d
+# Stop:   docker compose down          (keeps the JetStream volume)
+# Purge:  docker compose down -v       (also removes the JetStream volume)
+
+services:
+  nats:
+    image: nats:2.10-alpine
+    container_name: nats-jetstream
+    restart: unless-stopped
+    ports:
+      - "4222:4222" # NATS client connections
+      - "8222:8222" # NATS monitoring / JetStream overview
+    command:
+      - "-js" # enable JetStream
+      - "-sd" # JetStream storage directory
+      - "/data/jetstream"
+      - "-m" # monitoring HTTP port
+      - "8222"
+    volumes:
+      - nats-jetstream-data:/data/jetstream
+
+volumes:
+  nats-jetstream-data:
