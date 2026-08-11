@@ -59,10 +59,9 @@ curl -X POST http://localhost:3000/demos/core-nats/at-most-once
 
 ## Tests and checks
 
-Integration tests require a real NATS server:
+Tests are unit tests and do not require a real NATS server. Running the HTTP demos still requires NATS from Docker Compose.
 
 ```bash
-docker compose up -d
 npm test -- --runInBand
 npm run lint
 npm run build
