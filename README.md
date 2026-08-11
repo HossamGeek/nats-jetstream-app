@@ -2,99 +2,72 @@
 
 Simple NestJS application that bootstraps a reusable NATS connection using the official modern NATS.js Node transport package.
 
-This project currently includes only the connection infrastructure. It does **not** implement publish/subscribe, request/reply, streams, consumers, or JetStream APIs yet.
-
-## What is included
+## What this project demonstrates
 
 - NestJS HTTP application
 - Global environment configuration using `@nestjs/config`
 - Local NATS server with JetStream enabled using Docker Compose
 - One shared NATS connection per NestJS application instance
+- Core NATS service
+- Demo service for see NATS behavior
 - Basic health endpoint for checking NATS connection state
 - Graceful shutdown hooks
 - Unit tests for controller and service code
 - ESLint setup
 
-## Main structure
+## Structure
 
 ```text
 src/
-├── app.controller.ts
-├── app.module.ts
-├── app.service.ts
-├── main.ts
-├── health/
-├── infrastructure/
-│   └── nats/
-└── shared/
-    ├── config/
-    ├── constants/
-    └── interfaces/
-```
-
-## Environment variables
-
-Copy `.env.example` to `.env` before running locally.
-
-```env
-PORT=3000
-NATS_SERVERS=nats://localhost:4222
-NATS_CONNECTION_NAME=nats-jetstream-app
-NATS_CONNECT_TIMEOUT=5000
-NATS_FAIL_ON_STARTUP=false
-```
-
-`NATS_SERVERS` supports multiple servers:
-
-```env
-NATS_SERVERS=nats://node1:4222,nats://node2:4222,nats://node3:4222
+├── demos/core-nats/              # HTTP-triggered learning demos
+├── infrastructure/nats/          # reusable NATS connection + CoreNatsService
+├── shared/interfaces/
+└── shared/config
 ```
 
 ## Run locally
 
-Start NATS with JetStream enabled:
-
 ```bash
 docker compose up -d
-```
-
-Start the NestJS app:
-
-```bash
 npm run start:dev
 ```
 
-Check health:
+Health check:
 
-```bash
+```text
 GET http://localhost:3000/health
 ```
 
-Stop NATS:
+## Run Core NATS demos
+
+Run all demos:
 
 ```bash
-docker compose down
+curl -X POST http://localhost:3000/demos/core-nats/all
 ```
 
-Remove NATS JetStream volume too:
+Run one demo:
 
 ```bash
-docker compose down -v
+curl -X POST http://localhost:3000/demos/core-nats/exact
+curl -X POST http://localhost:3000/demos/core-nats/star
+curl -X POST http://localhost:3000/demos/core-nats/greater-than
+curl -X POST http://localhost:3000/demos/core-nats/fan-out
+curl -X POST http://localhost:3000/demos/core-nats/at-most-once
 ```
 
-## Scripts
+
+## Tests and checks
+
+Integration tests require a real NATS server:
 
 ```bash
-npm run build
-npm run start
-npm run start:dev
+docker compose up -d
+npm test -- --runInBand
 npm run lint
-npm run lint:fix
-npm test
+npm run build
 ```
 
-## Notes
+## Environment
 
-- NATS connection is created only inside `NatsService`.
-- Other modules should reuse the same connection through dependency injection.
-- NestJS `ClientProxy`, `ClientNats`, and JetStream client/manager APIs are intentionally not used in this task.
+Copy `.env.example` to `.env` if needed.

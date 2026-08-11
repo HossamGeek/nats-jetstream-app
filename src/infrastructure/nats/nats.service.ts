@@ -1,26 +1,15 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { connect, type NatsConnection } from '@nats-io/transport-node';
 import { NATS_OPTIONS } from '../../shared/constants/nats.constants';
-import type { NatsModuleOptions } from '../../shared/interfaces/nats-options.interface';
+import type { NatsModuleOptions } from '../../shared/interfaces/nats/nats-options.interface';
 
-/**
- * TASK-01 NATS infrastructure service.
- *
- * Responsible for establishing and gracefully draining the raw NATS connection only.
- * Publish/subscribe and JetStream APIs are intentionally NOT implemented here.
- * Downstream modules can reach the raw connection through `connection`.
- */
 @Injectable()
 export class NatsService implements OnModuleInit, OnModuleDestroy {
-  // Nest logger keeps connection lifecycle messages consistent with app logs.
   private readonly logger = new Logger(NatsService.name);
 
-  // Holds exactly one raw NatsConnection for this Nest application instance.
   private natsConnection: NatsConnection | null = null;
-  // Stores the last connection error so the health endpoint can report it.
   private connectionError: Error | null = null;
 
-  // Constructor only receives dependencies; all async connection work happens in lifecycle hooks.
   constructor(@Inject(NATS_OPTIONS) private readonly options: NatsModuleOptions) {}
 
   /**
@@ -73,7 +62,6 @@ export class NatsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
-    // Called by Nest during app.close() or OS signal shutdown because main.ts
     // enables shutdown hooks. It drains the connection so future subscriptions
     // can finish in-flight work and pending outbound messages can be flushed.
     if (!this.natsConnection) {

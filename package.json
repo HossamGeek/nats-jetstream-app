@@ -1,7 +1,7 @@
 {
   "name": "nats-jetstream-app",
   "version": "0.1.0",
-  "description": "TASK-01 - Minimal NestJS application with NATS JetStream infrastructure (connect + health only)",
+  "description": "NestJS application with reusable NATS connection and Core NATS publish/subscribe demos",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {

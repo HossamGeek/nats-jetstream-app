@@ -4,7 +4,6 @@ import type { HealthCheckResult, NatsHealthDetail } from '../shared/interfaces/h
 
 @Controller('health')
 export class HealthController {
-  // Uses the already-created singleton NatsService; no connection is opened here.
   constructor(private readonly natsService: NatsService) {}
 
   @Get()
@@ -21,8 +20,6 @@ export class HealthController {
         : {}),
     };
 
-    // Separate successful and failed checks so callers can inspect either the
-    // high-level status or the NATS-specific details.
     return {
       status: natsUp ? 'ok' : 'error',
       info: natsUp ? { nats: natsDetail } : {},
