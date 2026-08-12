@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nats-jetstream-ingress
+  namespace: nats-jetstream-app
+spec:
+  rules:
+    - host: api.myapp.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nats-jetstream-service
+                port:
+                  number: 80

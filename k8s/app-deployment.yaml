@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nats-app
+  namespace: nats-jetstream-app
+spec:
+  replicas: 5
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  
+  selector:
+    matchLabels:
+      app: nats-app
+  
+  template:
+    metadata:
+      labels:
+        app: nats-app
+    spec:
+      containers:
+        - name: nats-app
+          image: hossamgeek/nats-jetstream-app:v3
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: app-config
+          # NestJS Process ✅
+          # PostgreSQL ✅
+          # Liveness = ✅
+          # Readiness = ✅ 
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          # NestJS Process ✅
+          # PostgreSQL ❌
+          # Liveness = ✅ if livenessProbe is failed more than times will be restarted the pod
+          # Readiness = ❌ remove Pod from service temp until PostgreSQL is ready
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
