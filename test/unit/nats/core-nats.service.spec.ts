@@ -14,6 +14,7 @@ type TestNatsMessage = {
 type TestSubscribeCallback = (error: Error | null, message: TestNatsMessage) => void;
 
 type TestSubscribeOptions = {
+  queue?: string;
   callback: TestSubscribeCallback;
 };
 
@@ -96,6 +97,32 @@ describe('CoreNatsService', () => {
     expect(subscription.isDraining()).toBe(false);
     expect(subscription.getReceived()).toBe(1);
     expect(subscription.getProcessed()).toBe(1);
+  });
+
+  it('forwards queue group options to the native subscription', () => {
+    const handler: CoreNatsMessageHandler<{ jobId: string }> = jest.fn();
+
+    const subscription = service.subscribe('demo.jobs.process', handler, {
+      queue: 'demo-workers',
+    });
+
+    const [, options] = connection.subscribe.mock.calls[0];
+    expect(connection.subscribe.mock.calls[0][0]).toBe('demo.jobs.process');
+    expect(options.queue).toBe('demo-workers');
+    expect(typeof options.callback).toBe('function');
+    expect(subscription.queue).toBe('demo-workers');
+  });
+
+  it('subscribes without a queue group by default', () => {
+    const handler: CoreNatsMessageHandler<{ status: string }> = jest.fn();
+
+    const subscription = service.subscribe('demo.orders.*', handler);
+
+    const [, options] = connection.subscribe.mock.calls[0];
+    expect(connection.subscribe.mock.calls[0][0]).toBe('demo.orders.*');
+    expect(options.queue).toBeUndefined();
+    expect(typeof options.callback).toBe('function');
+    expect(subscription.queue).toBeUndefined();
   });
 
   it('decodes callback messages and passes subscription and actual subject to the handler', async () => {

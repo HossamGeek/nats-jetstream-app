@@ -2,12 +2,15 @@ import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CoreNatsService } from '@infrastructure/nats/core/core-nats.service';
 import type { CoreNatsMessageHandler } from '@shared/interfaces/nats/core-nats.types';
-import { CoreNatsDemoService } from '../../../src/demos/core-nats/core-nats-demo.service';
+import { CoreNatsDemoService } from '../../../src/modules/demos/core-nats/core-nats-demo.service';
 
 describe('CoreNatsDemoService', () => {
   let service: CoreNatsDemoService;
   let loggerLogSpy: jest.SpyInstance;
   const subscriptions = [
+    { unsubscribe: jest.fn(), closed: Promise.resolve(undefined) },
+    { unsubscribe: jest.fn(), closed: Promise.resolve(undefined) },
+    { unsubscribe: jest.fn(), closed: Promise.resolve(undefined) },
     { unsubscribe: jest.fn(), closed: Promise.resolve(undefined) },
     { unsubscribe: jest.fn(), closed: Promise.resolve(undefined) },
     { unsubscribe: jest.fn(), closed: Promise.resolve(undefined) },
@@ -80,23 +83,67 @@ describe('CoreNatsDemoService', () => {
     });
   });
 
-  it('runs the fan-out demo with two independent subscribers', async () => {
+  it('runs the fan-out demo with three independent subscribers', async () => {
     await service.runFanOutDemo();
 
-    expect(coreNatsService.subscribe).toHaveBeenCalledTimes(2);
+    expect(coreNatsService.subscribe).toHaveBeenCalledTimes(3);
     expect(coreNatsService.subscribe).toHaveBeenNthCalledWith(
       1,
-      'demo.orders.created',
+      'demo.jobs.fanout',
       expect.any(Function),
     );
     expect(coreNatsService.subscribe).toHaveBeenNthCalledWith(
       2,
-      'demo.orders.created',
+      'demo.jobs.fanout',
+      expect.any(Function),
+    );
+    expect(coreNatsService.subscribe).toHaveBeenNthCalledWith(
+      3,
+      'demo.jobs.fanout',
       expect.any(Function),
     );
     expect(coreNatsService.publish).toHaveBeenCalledTimes(1);
+    expect(coreNatsService.publish).toHaveBeenCalledWith('demo.jobs.fanout', {
+      orderId: 'order-100',
+      status: 'fanout',
+    });
     expect(subscriptions[0].unsubscribe).toHaveBeenCalledTimes(1);
     expect(subscriptions[1].unsubscribe).toHaveBeenCalledTimes(1);
+    expect(subscriptions[2].unsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('registers three queue-group workers for one job', async () => {
+    await service.runQueueGroupJobDemo({ jobId: 'job-100' });
+
+    expect(coreNatsService.subscribe).toHaveBeenCalledTimes(3);
+    for (const call of coreNatsService.subscribe.mock.calls) {
+      expect(call).toEqual([
+        'demo.jobs.process',
+        expect.any(Function),
+        { queue: 'demo-workers' },
+      ]);
+    }
+    expect(coreNatsService.publish).toHaveBeenCalledWith('demo.jobs.process', {
+      jobId: 'job-100',
+    });
+    expect(subscriptions[0].unsubscribe).toHaveBeenCalledTimes(1);
+    expect(subscriptions[1].unsubscribe).toHaveBeenCalledTimes(1);
+    expect(subscriptions[2].unsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('publishes multiple queue-group jobs without testing NATS load balancing internals', async () => {
+    await service.runQueueGroupBatchDemo(3);
+
+    expect(coreNatsService.subscribe).toHaveBeenCalledTimes(3);
+    expect(coreNatsService.publish).toHaveBeenNthCalledWith(1, 'demo.jobs.process', {
+      jobId: 'job-1',
+    });
+    expect(coreNatsService.publish).toHaveBeenNthCalledWith(2, 'demo.jobs.process', {
+      jobId: 'job-2',
+    });
+    expect(coreNatsService.publish).toHaveBeenNthCalledWith(3, 'demo.jobs.process', {
+      jobId: 'job-3',
+    });
   });
 
   it('runs the at-most-once demo sequence', async () => {
@@ -120,14 +167,26 @@ describe('CoreNatsDemoService', () => {
     await service.runFanOutDemo();
 
     await handlers[0]({
-      subscriptionSubject: 'demo.orders.created',
-      subject: 'demo.orders.created',
-      payload: { orderId: 'order-100', status: 'created' },
+      subscriptionSubject: 'demo.jobs.fanout',
+      subject: 'demo.jobs.fanout',
+      payload: { orderId: 'order-100', status: 'fanout' },
     });
 
     expect(loggerLogSpy).toHaveBeenCalledWith(
       expect.stringContaining('[RECEIVED] subscriber=Subscriber A'),
     );
+  });
+
+  it('logs queue worker identity from captured handlers', async () => {
+    await service.runQueueGroupJobDemo({ jobId: 'job-100' });
+
+    await handlers[1]({
+      subscriptionSubject: 'demo.jobs.process',
+      subject: 'demo.jobs.process',
+      payload: { jobId: 'job-100' },
+    });
+
+    expect(loggerLogSpy).toHaveBeenCalledWith(expect.stringContaining('[QUEUE WORKER] worker=B'));
   });
 
   it('creates consistent demo responses', () => {

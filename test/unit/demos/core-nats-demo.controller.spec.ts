@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CoreNatsDemoController } from '../../../src/demos/core-nats/core-nats-demo.controller';
-import { CoreNatsDemoService } from '../../../src/demos/core-nats/core-nats-demo.service';
+import { CoreNatsDemoController } from '../../../src/modules/demos/core-nats/core-nats-demo.controller';
+import { CoreNatsDemoService } from '../../../src/modules/demos/core-nats/core-nats-demo.service';
 
 describe('CoreNatsDemoController', () => {
   let controller: CoreNatsDemoController;
@@ -14,6 +14,8 @@ describe('CoreNatsDemoController', () => {
     runStarWildcardDemo: jest.fn(() => Promise.resolve(undefined)),
     runGreaterThanWildcardDemo: jest.fn(() => Promise.resolve(undefined)),
     runFanOutDemo: jest.fn(() => Promise.resolve(undefined)),
+    runQueueGroupJobDemo: jest.fn(() => Promise.resolve(undefined)),
+    runQueueGroupBatchDemo: jest.fn(() => Promise.resolve(undefined)),
     runAtMostOnceDemo: jest.fn(() => Promise.resolve(undefined)),
     createResponse: jest.fn(() => response),
   };
@@ -35,6 +37,7 @@ describe('CoreNatsDemoController', () => {
     expect(demoService.runStarWildcardDemo).toHaveBeenCalledTimes(1);
     expect(demoService.runGreaterThanWildcardDemo).toHaveBeenCalledTimes(1);
     expect(demoService.runFanOutDemo).toHaveBeenCalledTimes(1);
+    expect(demoService.runQueueGroupBatchDemo).toHaveBeenCalledWith(9);
     expect(demoService.runAtMostOnceDemo).toHaveBeenCalledTimes(1);
     expect(demoService.createResponse).toHaveBeenCalledWith('all', expect.any(String));
   });
@@ -73,5 +76,19 @@ describe('CoreNatsDemoController', () => {
 
     expect(demoService.runAtMostOnceDemo).toHaveBeenCalledTimes(1);
     expect(demoService.createResponse).toHaveBeenCalledWith('at-most-once', expect.any(String));
+  });
+
+  it('publishes one queue-group job', async () => {
+    await expect(controller.publishQueueGroupJob()).resolves.toBe(response);
+
+    expect(demoService.runQueueGroupJobDemo).toHaveBeenCalledWith({ jobId: 'job-100' });
+    expect(demoService.createResponse).toHaveBeenCalledWith('queue-group-job', expect.any(String));
+  });
+
+  it('publishes a queue-group job batch', async () => {
+    await expect(controller.publishQueueGroupBatch()).resolves.toBe(response);
+
+    expect(demoService.runQueueGroupBatchDemo).toHaveBeenCalledWith(9);
+    expect(demoService.createResponse).toHaveBeenCalledWith('queue-group-batch', expect.any(String));
   });
 });
