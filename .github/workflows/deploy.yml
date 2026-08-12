@@ -1,0 +1,83 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  test-build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Run tests
+      - name: Run tests
+        run: npm test
+
+      # 5. Build NestJS
+      - name: Build NestJS
+        run: npm run build
+
+      # 6. Generate Docker image tag from commit SHA
+      - name: Set image tag
+        run: |
+          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      # 7. Login to Docker Hub using Access Token
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      # 8. Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${IMAGE_TAG} .
+
+      # 9. Push Docker image
+      - name: Push Docker image
+        run: |
+          docker push \
+            ${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${IMAGE_TAG}
+
+      # 10. Check GitHub CLI authentication
+      - name: Authenticate GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
+        run: |
+          gh auth status
+
+      # 11. Update Kubernetes Deployment inside Codespace
+      - name: Deploy to Codespace
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
+        run: |
+          gh codespace ssh \
+            -c fluffy-zebra-jr9r66v9g9jf77g \
+            -- "kubectl set image deployment/app-deployment nats-app=${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${IMAGE_TAG}"
+
+      # 12. Wait until Kubernetes rollout finishes
+      - name: Wait for rollout
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
+        run: |
+          gh codespace ssh \
+            -c fluffy-zebra-jr9r66v9g9jf77g \
+            -- "kubectl rollout status deployment/app-deployment --timeout=120s"
