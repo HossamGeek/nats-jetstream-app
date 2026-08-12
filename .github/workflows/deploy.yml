@@ -75,6 +75,11 @@ jobs:
             -c fluffy-zebra-jr9r66v9g9jf77g \
             -- "rm -rf ~/k8s \
             && tar -xzf - -C ~ \
+            && kubectl apply -f ~/k8s/namespace.yaml \
             && kubectl apply -f ~/k8s/ \
-            && kubectl set image deployment/app-deployment nats-app=${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${{ steps.vars.outputs.sha_short }} \
-            && kubectl rollout status deployment/app-deployment --timeout=120s"
+            && kubectl set image deployment/app-deployment \
+                nats-app=${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${{ steps.vars.outputs.sha_short }} \
+                -n nats-jetstream-app \
+            && kubectl rollout status deployment/app-deployment \
+                -n nats-jetstream-app \
+                --timeout=120s"
