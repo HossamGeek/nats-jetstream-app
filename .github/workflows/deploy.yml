@@ -66,16 +66,25 @@ jobs:
         run: |
           gh auth status
 
-      # 11. Deploy Kubernetes manifests
+      # 11. Copy Kubernetes manifests    
+      - name: Copy Kubernetes manifests to Codespace
+        env:
+            GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
+        run: |
+            gh codespace cp \
+            -c fluffy-zebra-jr9r66v9g9jf77g \
+            -r k8s remote:/tmp/k8s     
+
+      # 12. Deploy Kubernetes manifests
       - name: Deploy Kubernetes manifests
         env:
             GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
         run: |
-            gh codespace ssh \
-            -c fluffy-zebra-jr9r66v9g9jf77g \
-            -- "cd /workspaces/nats-jetstream-app && kubectl apply -f k8s/"
+             gh codespace ssh \
+             -c fluffy-zebra-jr9r66v9g9jf77g \
+             -- "kubectl apply -f /tmp/k8s/"
                 
-      # 12. Update Kubernetes Deployment inside Codespace
+      # 13. Update Kubernetes Deployment inside Codespace
       - name: Deploy to Codespace
         env:
           GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
@@ -84,7 +93,7 @@ jobs:
             -c fluffy-zebra-jr9r66v9g9jf77g \
             -- "kubectl set image deployment/app-deployment nats-app=${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${IMAGE_TAG}"
 
-      # 13. Wait until Kubernetes rollout finishes
+      # 14. Wait until Kubernetes rollout finishes
       - name: Wait for rollout
         env:
           GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
