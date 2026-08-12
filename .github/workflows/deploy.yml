@@ -73,16 +73,17 @@ jobs:
         run: |
             gh codespace cp \
             -c fluffy-zebra-jr9r66v9g9jf77g \
-            -r k8s remote:/tmp/k8s     
+            -r k8s remote:
+
 
       # 12. Deploy Kubernetes manifests
-      - name: Deploy Kubernetes manifests
+      - name: Apply Kubernetes manifests
         env:
             GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
         run: |
-             gh codespace ssh \
-             -c fluffy-zebra-jr9r66v9g9jf77g \
-             -- "kubectl apply -f /tmp/k8s/"
+            gh codespace ssh \
+            -c fluffy-zebra-jr9r66v9g9jf77g \
+            -- "kubectl apply -f ~/k8s/"
                 
       # 13. Update Kubernetes Deployment inside Codespace
       - name: Deploy to Codespace
