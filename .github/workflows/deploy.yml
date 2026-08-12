@@ -75,12 +75,13 @@ jobs:
 
             gh codespace cp \
             -c fluffy-zebra-jr9r66v9g9jf77g \
-            k8s.tar.gz remote:
+            k8s.tar.gz remote:/workspaces/codespaces-blank/
 
             gh codespace ssh \
             -c fluffy-zebra-jr9r66v9g9jf77g \
-            -- "rm -rf ~/k8s \
-            && tar -xzf ~/k8s.tar.gz -C ~ \
-            && kubectl apply -f ~/k8s/ \
+            -- "cd /workspaces/codespaces-blank \
+            && rm -rf k8s \
+            && tar -xzf k8s.tar.gz \
+            && kubectl apply -f k8s/ \
             && kubectl set image deployment/app-deployment nats-app=${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${{ steps.vars.outputs.sha_short }} \
             && kubectl rollout status deployment/app-deployment --timeout=120s"
