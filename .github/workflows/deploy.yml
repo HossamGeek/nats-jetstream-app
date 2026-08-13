@@ -1,0 +1,101 @@
+name: Deploy main
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Run tests
+      - name: Run tests
+        run: npm test
+
+      # 5. Generate Docker image tag from commit SHA
+      - name: Set image tag
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      # 6. Set up Docker Buildx (Fast building & caching)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # 7. Login to Docker Hub using Access Token
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      # 8. Build Docker image
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${{ steps.vars.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 9. Check GitHub CLI authentication
+      - name: Authenticate GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
+        run: |
+          gh auth status
+
+      ## 10. Ensure Minikube is running and configure hosts
+      - name: Start Minikube and configure host
+        env:
+            GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
+        run: |
+            gh codespace ssh \
+            -c ${{ vars.CODESPACE_NAME }} \
+            -- '
+                if ! minikube status >/dev/null 2>&1; then
+                echo "Minikube is stopped. Starting..."
+                minikube start --driver=docker
+                else
+                echo "Minikube is already running."
+                fi
+
+                MINIKUBE_IP=$(minikube ip)
+                
+                minikube ssh -- "sudo sh -c '\''grep -v \"${{ vars.HOST_NAME }}\" /etc/hosts > /tmp/hosts && cat /tmp/hosts > /etc/hosts && echo \"$MINIKUBE_IP ${{ vars.HOST_NAME }}\" >> /etc/hosts'\''"
+            '
+
+      # 11. Copy, apply and deploy Kubernetes manifests    
+      - name: Deploy Manifests to Kubernetes
+        env:
+          GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
+        run: |
+            tar -czf - k8s/ | gh codespace ssh \
+            -c ${{ vars.CODESPACE_NAME }} \
+            -- "rm -rf ~/k8s \
+            && tar -xzf - -C ~ \
+            && kubectl apply -f ~/k8s/namespace.yaml \
+            && kubectl apply -f ~/k8s/ \
+            && kubectl set image deployment/nats-app \
+                nats-app=${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${{ steps.vars.outputs.sha_short }} \
+                -n nats-jetstream-app \
+            && kubectl rollout status deployment/nats-app \
+                -n nats-jetstream-app \
+                --timeout=120s"

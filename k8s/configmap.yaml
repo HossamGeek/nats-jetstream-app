@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: nats-jetstream-app
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  NATS_URL: "nats://nats:4222"

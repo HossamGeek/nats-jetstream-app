@@ -1,4 +1,4 @@
-import { JsonNatsCodec } from '../../../src/infrastructure/nats/core/json-nats.codec';
+import { JsonNatsCodec } from '@infrastructure/nats/core/json-nats.codec';
 
 describe('JsonNatsCodec', () => {
   const codec = new JsonNatsCodec();

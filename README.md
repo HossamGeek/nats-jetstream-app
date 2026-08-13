@@ -19,7 +19,8 @@ Simple NestJS application that bootstraps a reusable NATS connection using the o
 
 ```text
 src/
-├── demos/core-nats/              # HTTP-triggered learning demos
+├── modules/demos/core-nats/      # HTTP-triggered learning demos
+├── modules/health/               # health endpoint
 ├── infrastructure/nats/          # reusable NATS connection + CoreNatsService
 ├── shared/interfaces/
 └── shared/config
@@ -55,6 +56,15 @@ curl -X POST http://localhost:3000/demos/core-nats/greater-than
 curl -X POST http://localhost:3000/demos/core-nats/fan-out
 curl -X POST http://localhost:3000/demos/core-nats/at-most-once
 ```
+
+Queue Group demo APIs:
+
+```bash
+curl -X POST http://localhost:3000/demos/core-nats/queue-group/jobs
+curl -X POST http://localhost:3000/demos/core-nats/queue-group/jobs/batch
+```
+
+Normal subscribers all receive one message. Queue Group subscribers using the same subject and `demo-workers` group compete, so each message is handled by one group member.
 
 
 ## Tests and checks

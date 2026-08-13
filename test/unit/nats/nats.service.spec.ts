@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { connect } from '@nats-io/transport-node';
 import { Logger } from '@nestjs/common';
-import { NATS_OPTIONS } from '../../../src/shared/constants/nats.constants';
-import { NatsService } from '../../../src/infrastructure/nats/nats.service';
+import { NatsService } from '@infrastructure/nats/nats.service';
+import { NATS_OPTIONS } from '@shared/constants/nats.constants';
 
 jest.mock('@nats-io/transport-node', () => ({
   // Unit tests verify our lifecycle logic without opening a real socket.

@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { connect, type NatsConnection } from '@nats-io/transport-node';
-import { NATS_OPTIONS } from '../../shared/constants/nats.constants';
-import type { NatsModuleOptions } from '../../shared/interfaces/nats/nats-options.interface';
+import { NATS_OPTIONS } from '@shared/constants/nats.constants';
+import type { NatsModuleOptions } from '@shared/interfaces/nats/nats-options.interface';
 
 @Injectable()
 export class NatsService implements OnModuleInit, OnModuleDestroy {
