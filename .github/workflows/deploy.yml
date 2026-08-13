@@ -78,23 +78,20 @@ jobs:
             echo \"Minikube IP is \$MINIKUBE_IP\"
           "
 
-      # 11. Copy and deploy Kubernetes manifests    
+      # 11. Copy, apply and deploy Kubernetes manifests    
       - name: Deploy Manifests to Kubernetes
         env:
           GH_TOKEN: ${{ secrets.CODESPACE_TOKEN }}
         run: |
-          tar -czf - k8s/ | gh codespace ssh -c ${{ vars.CODESPACE_NAME }} -- 'bash -s' << 'EOF'
-            set -e
-            rm -rf ~/k8s && tar -xzf - -C ~
-            
-            kubectl apply -f ~/k8s/namespace.yaml
-            kubectl apply -f ~/k8s/ --recursive
-            
-            kubectl set image deployment/nats-app \
-              nats-app=${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${{ steps.vars.outputs.sha_short }} \
-              -n nats-jetstream-app
-              
-            kubectl rollout status deployment/nats-app \
-              -n nats-jetstream-app \
-              --timeout=300s
-          EOF
+            tar -czf - k8s/ | gh codespace ssh \
+            -c ${{ vars.CODESPACE_NAME }} \
+            -- "rm -rf ~/k8s \
+            && tar -xzf - -C ~ \
+            && kubectl apply -f ~/k8s/namespace.yaml \
+            && kubectl apply -f ~/k8s/ \
+            && kubectl set image deployment/nats-app \
+                nats-app=${{ secrets.DOCKER_USERNAME }}/nats-jetstream-app:${{ steps.vars.outputs.sha_short }} \
+                -n nats-jetstream-app \
+            && kubectl rollout status deployment/nats-app \
+                -n nats-jetstream-app \
+                --timeout=120s"
