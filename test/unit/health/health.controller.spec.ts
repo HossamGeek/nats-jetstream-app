@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NatsService } from '@infrastructure/nats/nats.service';
-import { HealthController } from '../../../src/health/health.controller';
+import { HealthController } from '../../../src/modules/health/health.controller';
 
 describe('HealthController', () => {
   let controller: HealthController;

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { Msg, Subscription } from '@nats-io/transport-node';
 import type {
   CoreNatsMessageHandler,
+  CoreNatsSubscribeOptions,
   CoreNatsSubscription,
 } from '@shared/interfaces/nats/core-nats.types';
 import { NatsService } from '../nats.service';
@@ -30,10 +31,12 @@ export class CoreNatsService {
   subscribe<TPayload>(
     subject: string,
     handler: CoreNatsMessageHandler<TPayload>,
+    options: CoreNatsSubscribeOptions = {},
   ): CoreNatsSubscription {
     // Call flush() after subscribing when the next step depends on server-side
     // interest registration (for example, deterministic tests or demos).
     const subscription = this.natsService.connection.subscribe(subject, {
+      queue: options.queue,
       callback: (error: Error | null, message: Msg): void => {
         if (error) {
           // Surface infrastructure subscription errors without converting them into business logic.
@@ -50,7 +53,7 @@ export class CoreNatsService {
     });
 
     // Return a wrapper instead of the bare subscription so callers get a stable app-level type.
-    return this.toCoreSubscription(subject, subscription);
+    return this.toCoreSubscription(subject, subscription, options);
   }
 
   /** Decodes one native NATS message and invokes the application handler. */
@@ -81,10 +84,12 @@ export class CoreNatsService {
   private toCoreSubscription(
     subject: string,
     nativeSubscription: Subscription,
+    options: CoreNatsSubscribeOptions,
   ): CoreNatsSubscription {
     // Delegate lifecycle methods directly to NATS.js so unsubscribe/drain semantics stay native.
     return {
       subject,
+      queue: options.queue,
       nativeSubscription,
       closed: nativeSubscription.closed,
       unsubscribe: (max?: number): void => nativeSubscription.unsubscribe(max),

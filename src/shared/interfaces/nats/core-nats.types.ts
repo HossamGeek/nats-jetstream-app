@@ -13,9 +13,16 @@ export type CoreNatsMessageHandler<TPayload> = (
   message: CoreNatsMessage<TPayload>,
 ) => void | Promise<void>;
 
+export interface CoreNatsSubscribeOptions {
+  /** Queue group name used by Core NATS to load-balance matching messages. */
+  queue?: string;
+}
+
 export interface CoreNatsSubscription {
   /** The subject pattern used to create the subscription. */
   readonly subject: string;
+  /** Optional Core NATS queue group name, when this is a queue-group subscription. */
+  readonly queue?: string;
   /** Native NATS subscription for callers that need low-level lifecycle details. */
   readonly nativeSubscription: Subscription;
   /** Resolves when the native subscription closes. */
