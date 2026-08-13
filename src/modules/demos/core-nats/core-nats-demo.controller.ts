@@ -2,12 +2,12 @@ import { Controller, Post } from "@nestjs/common";
 import type { CoreNatsDemoRunResponse } from "@shared/interfaces/demos/core-nats-demo.types";
 import { CoreNatsDemoService } from "./core-nats-demo.service";
 
-@Controller("demos/core-nats")
+@Controller("core-nats")
 export class CoreNatsDemoController {
   constructor(private readonly coreNatsDemoService: CoreNatsDemoService) {}
 
   /** Runs all Core NATS demo scenarios in a predictable learning order. */
-  @Post("all")
+  @Post()
   async runAll(): Promise<CoreNatsDemoRunResponse> {
     // Execute each demo sequentially so log output is easy to read from top to bottom.
     await this.coreNatsDemoService.runExactSubjectDemo();
