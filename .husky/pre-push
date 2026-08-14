@@ -1,2 +1,12 @@
 npm run lint
-npm test -- --runInBand
+
+CHANGED_TESTS=$(git diff --name-only @{u}...HEAD 2>/dev/null | grep '^test/unit/')
+
+if [ -n "$CHANGED_TESTS" ]; then
+  echo "🧪 Changes detected in test/unit:"
+  echo "$CHANGED_TESTS"
+
+  npm test -- --runInBand
+else
+  echo "✅ No changes in test/unit — skipping unit tests"
+fi
