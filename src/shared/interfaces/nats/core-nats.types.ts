@@ -7,6 +7,15 @@ export interface CoreNatsMessage<TPayload> {
   subject: string;
   /** JSON-decoded payload published on the subject. */
   payload: TPayload;
+  /** Reply inbox set when this message is a request that expects a responder. */
+  reply?: string;
+  /** Responds to the requester through the native message reply inbox. */
+  respond?<TResponse>(payload: TResponse): boolean;
+}
+
+export interface CoreNatsRequestOptions {
+  /** Timeout in milliseconds before the request is considered failed. */
+  timeout?: number;
 }
 
 export type CoreNatsMessageHandler<TPayload> = (

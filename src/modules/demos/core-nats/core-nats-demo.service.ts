@@ -1,4 +1,12 @@
-import { Injectable, Logger } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from "@nestjs/common";
+import { RequestError, TimeoutError } from "@nats-io/transport-node";
 import { CoreNatsService } from "@infrastructure/nats/core/core-nats.service";
 import {
   CoreNatsDemoFanOutSubscriber,
@@ -11,17 +19,108 @@ import type {
   CoreNatsSubscription,
 } from "@shared/interfaces/nats/core-nats.types";
 import type {
-  CoreNatsDemoRunResponse,
   DemoJobPayload,
   DemoOrderPayload,
   DemoTextPayload,
+  DemoUserGetRequest,
+  DemoUserResponse,
 } from "@shared/interfaces/demos/core-nats-demo.types";
 
 @Injectable()
-export class CoreNatsDemoService {
+export class CoreNatsDemoService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CoreNatsDemoService.name);
+  private readonly subscriptions: CoreNatsSubscription[] = [];
 
   constructor(private readonly coreNatsService: CoreNatsService) {}
+
+  /** Registers the request/reply responders when the application starts. */
+  async onModuleInit(): Promise<void> {
+    try {
+      this.subscriptions.push(
+        this.coreNatsService.subscribe<DemoUserGetRequest>(
+          CoreNatsDemoSubject.UsersGet,
+          (message) => this.handleGetUser(message),
+        ),
+        this.coreNatsService.subscribe<{ ping: boolean }>(
+          CoreNatsDemoSubject.RpcSlow,
+          async (message) => {
+            await this.delay(1500);
+            message.respond?.({ pong: true });
+          },
+        ),
+      );
+      // Flush so server-side interest is registered before any HTTP request arrives.
+      await this.coreNatsService.flush();
+    } catch (error) {
+      // Keep the app alive when NATS is unavailable; requests will surface no-responders/timeout instead.
+      const normalizedError =
+        error instanceof Error ? error : new Error(String(error));
+      this.logger.error(
+        `Failed to start Core NATS responder subscriptions: ${normalizedError.message}`,
+        normalizedError.stack,
+      );
+    }
+  }
+
+
+  /** Fetches a user through the Core NATS request/reply RPC demo. */
+  async getUser(userId: string): Promise<DemoUserResponse> {
+    this.logger.log(`[REQUEST] subject=${CoreNatsDemoSubject.UsersGet}`);
+    const response = await this.coreNatsService.request<
+      DemoUserGetRequest,
+      DemoUserResponse
+    >(CoreNatsDemoSubject.UsersGet, { userId });
+    this.logger.log(`[RESPONSE] subject=${CoreNatsDemoSubject.UsersGet}`);
+    return response;
+  }
+
+  /** Triggers a request that outlives the requester timeout on purpose. */
+  async triggerTimeout(): Promise<void> {
+    try {
+      await this.coreNatsService.request(
+        CoreNatsDemoSubject.RpcSlow,
+        { ping: true },
+        { timeout: 500 },
+      );
+    } catch (error) {
+      if (error instanceof TimeoutError) {
+        throw new HttpException(
+          {
+            status: "error",
+            error: "TIMEOUT",
+            message: error.message,
+            subject: CoreNatsDemoSubject.RpcSlow,
+          },
+          HttpStatus.REQUEST_TIMEOUT,
+        );
+      }
+      throw error;
+    }
+  }
+
+  /** Triggers a request to a subject with no active responder on purpose. */
+  async triggerNoResponder(): Promise<void> {
+    try {
+      await this.coreNatsService.request(
+        CoreNatsDemoSubject.RpcNoResponder,
+        { ping: true },
+        { timeout: 1000 },
+      );
+    } catch (error) {
+      if (error instanceof RequestError && error.isNoResponders()) {
+        throw new HttpException(
+          {
+            status: "error",
+            error: "NO_RESPONDERS",
+            message: error.message,
+            subject: CoreNatsDemoSubject.RpcNoResponder,
+          },
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+      throw error;
+    }
+  }
 
   /** Demonstrates that an exact Core NATS subject only receives the same subject. */
   async runExactSubjectDemo(): Promise<void> {
@@ -143,16 +242,6 @@ export class CoreNatsDemoService {
     });
   }
 
-  /** Builds a consistent HTTP/demo response after a scenario finishes. */
-  createResponse(demo: string, observation: string): CoreNatsDemoRunResponse {
-    // Response construction belongs here because the service owns demo orchestration results.
-    return {
-      demo,
-      status: "started-and-finished",
-      observation,
-    };
-  }
-
   /** Publishes the reusable demo order payload shape to the supplied subject. */
   private publishOrder(subject: string, status: string): void {
     // Keep payload construction in one helper so all demos use the same simple message shape.
@@ -241,5 +330,26 @@ export class CoreNatsDemoService {
     this.logger.log(
       `[QUEUE WORKER] worker=${worker} subject=${message.subject} queue=${CoreNatsDemoQueueGroup.DemoWorkers} payload=${JSON.stringify(message.payload)}`,
     );
+  }
+
+  /** Handles demo.users.get by replying with a demo user and logging the reply inbox. */
+  private handleGetUser(message: CoreNatsMessage<DemoUserGetRequest>): void {
+    this.logger.log(
+      `[REQUEST RECEIVED] subject=${message.subject} reply=${message.reply ?? "none"}`,
+    );
+    const response: DemoUserResponse = {
+      id: message.payload.userId,
+      name: "Demo User",
+    };
+    message.respond?.(response);
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  
+  /** Cleans up responder subscriptions on shutdown. */
+  onModuleDestroy(): void {
+    this.unsubscribeAll(this.subscriptions);
   }
 }
