@@ -66,6 +66,25 @@ curl -X POST http://localhost:3000/demos/core-nats/queue-group/jobs/batch
 
 Normal subscribers all receive one message. Queue Group subscribers using the same subject and `demo-workers` group compete, so each message is handled by one group member.
 
+## Request / Reply Demos
+
+Request/Reply sends a message to a NATS subject and waits for a responder response until the configured timeout.
+
+Successful RPC:
+```bash
+curl http://localhost:3000/core-nats/request-reply/users/user-100
+```
+
+Timeout scenario:
+```bash
+curl http://localhost:3000/core-nats/request-reply/timeout
+```
+
+No responder scenario:
+```bash
+curl http://localhost:3000/core-nats/request-reply/no-responder
+```
+
 
 ## Tests and checks
 

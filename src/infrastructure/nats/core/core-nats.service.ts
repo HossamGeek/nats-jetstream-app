@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { Msg, Subscription } from '@nats-io/transport-node';
+import { DEFAULT_CORE_NATS_REQUEST_TIMEOUT_MS } from '@shared/constants/nats.constants';
 import type {
   CoreNatsMessageHandler,
+  CoreNatsRequestOptions,
   CoreNatsSubscribeOptions,
   CoreNatsSubscription,
 } from '@shared/interfaces/nats/core-nats.types';
@@ -19,6 +21,25 @@ export class CoreNatsService {
   publish<TPayload>(subject: string, payload: TPayload): void {
     // Reuse the centralized app connection and codec; this method must not create connections.
     this.natsService.connection.publish(subject, this.codec.encode(payload));
+  }
+
+  /**
+   * Sends one JSON request and waits for a responder reply until the timeout.
+   * Delegates to the native request() and lets native failures propagate
+   * unchanged (e.g. TimeoutError, RequestError with a NoRespondersError cause).
+   */
+  async request<TRequest, TResponse>(
+    subject: string,
+    payload: TRequest,
+    options: CoreNatsRequestOptions = {},
+  ): Promise<TResponse> {
+    const timeoutMs =
+      options.timeout ?? DEFAULT_CORE_NATS_REQUEST_TIMEOUT_MS;
+    const encoded = this.codec.encode(payload);
+    const message = await this.natsService.connection.request(subject, encoded, {
+      timeout: timeoutMs,
+    });
+    return this.codec.decode(message.data) as TResponse;
   }
 
   /** Flushes the shared NATS connection to synchronize with the server. */
@@ -69,6 +90,10 @@ export class CoreNatsService {
         subscriptionSubject,
         subject: message.subject,
         payload,
+        reply: message.reply,
+        // Respond() re-encodes through the shared codec and delegates to the native reply inbox.
+        respond: <TResponse>(response: TResponse): boolean =>
+          message.respond(this.codec.encode(response)),
       });
     } catch (error) {
       // Normalize unknown thrown values so Nest Logger always receives a useful message/stack.

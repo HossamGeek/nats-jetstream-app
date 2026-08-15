@@ -8,6 +8,9 @@ export enum CoreNatsDemoSubject {
   AtMostOnce = 'demo.at-most-once',
   JobsFanout = 'demo.jobs.fanout',
   JobsProcess = 'demo.jobs.process',
+  UsersGet = 'demo.users.get',
+  RpcSlow = 'demo.rpc.slow',
+  RpcNoResponder = 'demo.rpc.no-responder',
 }
 
 export enum CoreNatsDemoFanOutSubscriber {
