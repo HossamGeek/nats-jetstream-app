@@ -21,7 +21,6 @@ import type {
 import type {
   DemoJobPayload,
   DemoOrderPayload,
-  DemoRpcErrorResponse,
   DemoTextPayload,
   DemoUserGetRequest,
   DemoUserResponse,
@@ -76,7 +75,7 @@ export class CoreNatsDemoService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Triggers a request that outlives the requester timeout on purpose. */
-  async triggerTimeout(): Promise<DemoRpcErrorResponse> {
+  async triggerTimeout(): Promise<void> {
     try {
       await this.coreNatsService.request(
         CoreNatsDemoSubject.RpcSlow,
@@ -97,20 +96,10 @@ export class CoreNatsDemoService implements OnModuleInit, OnModuleDestroy {
       }
       throw error;
     }
-
-    throw new HttpException(
-      {
-        status: "error",
-        error: "TIMEOUT",
-        message: "Request unexpectedly succeeded without timing out.",
-        subject: CoreNatsDemoSubject.RpcSlow,
-      },
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
   }
 
   /** Triggers a request to a subject with no active responder on purpose. */
-  async triggerNoResponder(): Promise<DemoRpcErrorResponse> {
+  async triggerNoResponder(): Promise<void> {
     try {
       await this.coreNatsService.request(
         CoreNatsDemoSubject.RpcNoResponder,
@@ -131,16 +120,6 @@ export class CoreNatsDemoService implements OnModuleInit, OnModuleDestroy {
       }
       throw error;
     }
-
-    throw new HttpException(
-      {
-        status: "error",
-        error: "NO_RESPONDERS",
-        message: "Request unexpectedly found a responder.",
-        subject: CoreNatsDemoSubject.RpcNoResponder,
-      },
-      HttpStatus.INTERNAL_SERVER_ERROR,
-    );
   }
 
   /** Demonstrates that an exact Core NATS subject only receives the same subject. */

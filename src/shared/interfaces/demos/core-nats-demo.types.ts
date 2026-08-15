@@ -23,10 +23,3 @@ export interface DemoUserResponse {
   id: string;
   name: string;
 }
-
-export interface DemoRpcErrorResponse {
-  status: 'error';
-  error: string;
-  message: string;
-  subject: string;
-}

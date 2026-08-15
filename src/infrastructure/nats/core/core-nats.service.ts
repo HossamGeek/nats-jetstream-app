@@ -23,11 +23,7 @@ export class CoreNatsService {
     this.natsService.connection.publish(subject, this.codec.encode(payload));
   }
 
-  /**
-   * Sends one JSON request and waits for a responder reply until the timeout.
-   * Delegates to the native request() and lets native failures propagate
-   * unchanged (e.g. TimeoutError, RequestError with a NoRespondersError cause).
-   */
+  /** Sends one JSON request and waits for a responder reply until the timeout. */
   async request<TRequest, TResponse>(
     subject: string,
     payload: TRequest,

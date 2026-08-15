@@ -1,4 +1,4 @@
-import { HttpException, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NoRespondersError, RequestError, TimeoutError } from '@nats-io/transport-node';
 import { CoreNatsService } from '@infrastructure/nats/core/core-nats.service';
@@ -209,7 +209,7 @@ describe('CoreNatsDemoService', () => {
   it('uses a short custom timeout for the timeout demo', async () => {
     coreNatsService.request.mockResolvedValue({ pong: true });
 
-    await expect(service.triggerTimeout()).rejects.toThrow(HttpException);
+    await expect(service.triggerTimeout()).resolves.toBeUndefined();
 
     expect(coreNatsService.request).toHaveBeenCalledWith(
       'demo.rpc.slow',
@@ -234,7 +234,7 @@ describe('CoreNatsDemoService', () => {
   it('requests an unsubscribed subject for the no-responder demo', async () => {
     coreNatsService.request.mockResolvedValue({});
 
-    await expect(service.triggerNoResponder()).rejects.toThrow(HttpException);
+    await expect(service.triggerNoResponder()).resolves.toBeUndefined();
 
     expect(coreNatsService.request).toHaveBeenCalledWith(
       'demo.rpc.no-responder',

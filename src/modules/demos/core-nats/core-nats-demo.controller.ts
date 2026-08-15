@@ -1,9 +1,6 @@
 import { Controller, Get, Param, Post } from "@nestjs/common";
 import { ApiResponse } from "@shared/lib/responses/api-response";
-import type {
-  DemoRpcErrorResponse,
-  DemoUserResponse,
-} from "@shared/interfaces/demos/core-nats-demo.types";
+import type { DemoUserResponse } from "@shared/interfaces/demos/core-nats-demo.types";
 import { CoreNatsDemoService } from "./core-nats-demo.service";
 
 @Controller("core-nats")
@@ -138,13 +135,13 @@ export class CoreNatsDemoController {
 
   /** Demonstrates a request that times out because the responder replies too slowly. */
   @Get("request-reply/timeout")
-  async requestReplyTimeout(): Promise<DemoRpcErrorResponse> {
-    return this.coreNatsDemoService.triggerTimeout();
+  async requestReplyTimeout(): Promise<void> {
+    await this.coreNatsDemoService.triggerTimeout();
   }
 
   /** Demonstrates a request to a subject that has no active responder. */
   @Get("request-reply/no-responder")
-  async requestReplyNoResponder(): Promise<DemoRpcErrorResponse> {
-    return this.coreNatsDemoService.triggerNoResponder();
+  async requestReplyNoResponder(): Promise<void> {
+    await this.coreNatsDemoService.triggerNoResponder();
   }
 }
