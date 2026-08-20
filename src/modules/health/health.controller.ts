@@ -8,8 +8,7 @@ export class HealthController {
 
   @Get()
   check(): HealthCheckResult {
-    // isConnected delegates to NatsConnection.isClosed(), so the endpoint does
-    // not need to know any low-level NATS implementation details.
+    // isConnected reflects tracked NATS connection health without exposing low-level details.
     const natsUp = this.natsService.isConnected;
     // Include the last startup/connection error when available to make local
     // troubleshooting clear without exposing credentials or server internals.

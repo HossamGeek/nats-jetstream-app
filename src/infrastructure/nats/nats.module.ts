@@ -4,6 +4,8 @@ import natsConfig from '@shared/config/nats.config';
 import { NATS_OPTIONS } from '@shared/constants/nats.constants';
 import type { NatsModuleOptions } from '@shared/interfaces/nats/nats-options.interface';
 import { CoreNatsService } from './core/core-nats.service';
+import { JetStreamService } from './jetstream/jetstream.service';
+import { StreamService } from './jetstream/stream.service';
 import { NatsService } from './nats.service';
 
 @Module({
@@ -18,8 +20,10 @@ import { NatsService } from './nats.service';
         configService.getOrThrow<NatsModuleOptions>('nats'),
     },
     NatsService,
+    JetStreamService,
     CoreNatsService,
+    StreamService,
   ],
-  exports: [NatsService, CoreNatsService],
+  exports: [NatsService, JetStreamService, CoreNatsService, StreamService],
 })
 export class NatsModule {}
