@@ -17,6 +17,7 @@
     "test:cov": "jest --coverage"
   },
   "dependencies": {
+    "@nats-io/jetstream": "^3.4.0",
     "@nats-io/transport-node": "^3.4.0",
     "@nestjs/common": "^11.1.29",
     "@nestjs/config": "^4.0.4",

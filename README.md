@@ -9,6 +9,7 @@ Simple NestJS application that bootstraps a reusable NATS connection using the o
 - Local NATS server with JetStream enabled using Docker Compose
 - One shared NATS connection per NestJS application instance
 - Core NATS service
+- JetStream stream management service and structured HTTP demos
 - Demo service for see NATS behavior
 - Basic health endpoint for checking NATS connection state
 - Graceful shutdown hooks
@@ -20,6 +21,7 @@ Simple NestJS application that bootstraps a reusable NATS connection using the o
 ```text
 src/
 ├── modules/demos/core-nats/      # HTTP-triggered learning demos
+├── modules/demos/jetstream-nats/ # JetStream stream/consumer learning demos
 ├── modules/health/               # health endpoint
 ├── infrastructure/nats/          # reusable NATS connection + CoreNatsService
 ├── shared/interfaces/
@@ -65,6 +67,24 @@ curl -X POST http://localhost:3000/demos/core-nats/queue-group/jobs/batch
 ```
 
 Normal subscribers all receive one message. Queue Group subscribers using the same subject and `demo-workers` group compete, so each message is handled by one group member.
+
+## Run JetStream demos
+
+Each endpoint creates only known `DEMO_JS_*` streams and cleans them up safely when the scenario completes.
+
+```bash
+curl -X POST http://localhost:3000/jetstream-nats/stream-crud
+curl -X POST http://localhost:3000/jetstream-nats/hierarchical-subjects
+curl -X POST http://localhost:3000/jetstream-nats/storage
+curl -X POST http://localhost:3000/jetstream-nats/limits
+curl -X POST http://localhost:3000/jetstream-nats/limits/max-msgs
+curl -X POST http://localhost:3000/jetstream-nats/limits/max-bytes
+curl -X POST http://localhost:3000/jetstream-nats/limits/max-age
+curl -X POST http://localhost:3000/jetstream-nats/workqueue
+curl -X POST http://localhost:3000/jetstream-nats/interest
+```
+
+The responses include structured evidence from actual `StreamInfo` values such as storage type, retention policy, message counts, byte counts, stream sequences, consumer counts, and double-ACK confirmations. The individual limits endpoints use isolated streams for max-msgs, max-bytes, and max-age evidence.
 
 ## Request / Reply Demos
 
